@@ -374,6 +374,23 @@ ComponentExtender.addExtender(
 ```
 
 ---
+# Ideas
+- ✅ Select all with prop X (like invalid field components in Loki Checkout)
+- <span class="cross">✗</span> Automatically add any Alpine.js component to a global store
+- <span class="cross">✗</span> Proxy specific setters to make them more secure
+
+---
+# Loki Checkout
+- <!-- .element: class="fragment" data-fragment-index="1" --> Fastest checkout under Luma, Hyvä and Nebula 
+- <!-- .element: class="fragment" data-fragment-index="2" --> 299 modules with all tests in the green
+- <!-- .element: class="fragment" data-fragment-index="3" --> Exciting new B2B Loki Extensions for 2027
+- <!-- .element: class="fragment" data-fragment-index="4" --> Working towards a free plan (Q1 2027)
+
+---
+<!-- .slide: class="title-slide" data-state="title" -->
+# Questions
+
+---
 <!-- .slide: class="title-slide" data-state="title" -->
 # Thank you!
 
