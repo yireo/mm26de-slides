@@ -51,7 +51,7 @@ Template: <!-- .element: class="label" -->
 ```
 
 Script: <!-- .element: class="label" -->
-```js [1|2|3-8]
+```js
 document.addEventListener('alpine:init', () => {
     Alpine.data('component1', () => {
         return {
@@ -113,7 +113,7 @@ Template: <!-- .element: class="label" -->
 ```
 
 Script: <!-- .element: class="label" -->
-```js [1|3-5]
+```js
 const componentType = {foo: "bar"};
 document.addEventListener('alpine:init', () => {
     Alpine.data('component1', () => ({name: "component1", ...componentType}));
@@ -131,7 +131,7 @@ document.addEventListener('alpine:init', () => {
 
 ---
 # Component partials (Loki)
-```js [1-6|8-10|12-16]
+```js
 const LokiComponentType = {
     ...LokiLoadDataComponentPartial,
     ...LokiLoadInitMethodsComponentPartial,
@@ -167,7 +167,8 @@ document.addEventListener('alpine:init', () => {
 ---
 <!-- .slide: class="dense" -->
 # Components store
-```js [1-12|14-20]
+
+```js
 Alpine.store('components', {
     components: {},
     componentNames() {
@@ -196,7 +197,7 @@ Alpine.store('components').componentNames();
 
 ---
 # Component-store-aware component type
-```js [1-5|7-10]
+```js
 const ComponentAwareType = {
     init() {
         Alpine.store('components').add(this.name, this);
@@ -213,7 +214,7 @@ Alpine.data('component1', () => ({
 
 ---
 # Referring from one component to another
-```js [3-5|6-8]
+```js
 Alpine.data('component2', () => {
     return {
         init() {
@@ -231,12 +232,26 @@ Alpine.data('component2', () => {
 ---
 # Magento KnockoutJS / UiComponent magic
 - ✅ `import`: done
-- <span class="cross">✗</span> `export`: nope
-- <span class="cross">✗</span> `link` (combination of `import` and `export`): nope
+- ⏱️ `export`: maybe
+- <span class="cross">✗</span> `link` (combination of `import` and `export`): nah
+
+---
+# Adding a new prop to an existing component 
+```js
+Alpine.data('component2', () => {
+    return {
+        foo() {
+            return Alpine.store('components').get('component1')?.foo2;
+        }
+    }
+});
+```
+
+And then you need to update the template
 
 ---
 # Pushing with `Alpine.$data`
-```js [3-9|5|6|7]
+```js
 Alpine.data('component2', () => {
     return {
         init() {
@@ -269,7 +284,7 @@ function initHeader() { return {}; }
 ```
 
 Override the global function: <!-- .element: class="label" -->
-```js [1|2-8]
+```js
 window.originalInitHeader = window.initHeader;
 window.initHeader = function() {
     const originalData = window.originalInitHeader();
@@ -282,7 +297,7 @@ window.initHeader = function() {
 
 ---
 # Hyvä `initHeader` with a `Proxy`
-```js [1|2|4|5]
+```js
 window.initHeader = new Proxy(window.initHeader, {
     apply(target, thisArg, args) {
         console.log('Before original');
@@ -295,7 +310,7 @@ window.initHeader = new Proxy(window.initHeader, {
 
 ---
 # Creating a `Proxy` for `Alpine.data()`
-```js [1|3|4-5]
+```js
 Alpine.data = new Proxy(Alpine.data, {
     apply(target, thisArg, args) {
         const [name, factory] = args;
@@ -308,7 +323,7 @@ Alpine.data = new Proxy(Alpine.data, {
 ---
 <!-- .slide: class="dense" -->
 # Hooking this proxy to `ComponentExtender`
-```js [1-6|8-18|14-16|20-23]
+```js
 Alpine.data = new Proxy(Alpine.data, {
     apply(target, thisArg, args) {
         const [name, factory] = args;
@@ -338,7 +353,7 @@ Alpine.data = new Proxy(Alpine.data, {
 
 ---
 # `ComponentExtender` logic
-```js [1-8|9-15]
+```js
 const ComponentExtender = {
     extenders: [],
     addExtender(extenderName, extenderCallback) {
@@ -359,7 +374,7 @@ const ComponentExtender = {
 
 ---
 # Example extender
-```js [1-3|4-6|8-9]
+```js
 ComponentExtender.addExtender(
     'component1Extender',
     (componentName, component, args) => {
@@ -377,7 +392,8 @@ ComponentExtender.addExtender(
 # Ideas
 - ✅ Select all with prop X (like invalid field components in Loki Checkout)
 - <span class="cross">✗</span> Automatically add any Alpine.js component to a global store
-- <span class="cross">✗</span> Proxy specific setters to make them more secure
+- ⏱️ Proxy specific setters to make them more secure
+- ⏱️ Alpine store with services for usage in components (service container)
 
 ---
 # Loki Checkout
