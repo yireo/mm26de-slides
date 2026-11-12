@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Improving Alpine.js Code With Design Patterns - Jisse Reitsma</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;800&family=JetBrains+Mono:wght@400;600&display=swap">
+
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5/dist/reset.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5/dist/reveal.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5/dist/theme/black.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/highlight.js@11/styles/tokyo-night-dark.min.css">
+    <link rel="stylesheet" href="theme.css">
+</head>
+<body>
+<div class="reveal">
+    <div class="slides">
+        <section data-markdown data-separator="^---$" data-separator-notes="^Note:">
+            <textarea data-template>
+&lt;!-- .slide: class=&quot;title-slide&quot; data-state=&quot;title&quot; --&gt;
+# Improving Alpine.js Code With Design Patterns
+
+**Jisse Reitsma** · Yireo
+
+Meet Magento DE 2026
+
+---
+&lt;!-- .slide: class=&quot;speaker-slide&quot; --&gt;
+# Jisse Reitsma
+- Founder of Yireo
+- Creator of Loki Extensions and Loki Checkout
+- Board member of Magento Association
+
+---
+# Alpine.js
+- Lightweight, so great for performance
+- Used in Hyvä, Nebula and Loki Theme Kit
+- Easy-to-use and therefore often underestimated
+
+---
+&lt;!-- .slide: class=&quot;section-slide&quot; --&gt;
+Part 1 &lt;!-- .element: class=&quot;kicker&quot; --&gt;
+
+# Component definitions
+
+---
+# Alpine.js terminology
+- Component (instance)
+- Component definition
+
+```html
+&lt;div x-data=&#039;{&quot;foo&quot;:&quot;bar&quot;}&#039;&gt;
+    Foo: &lt;span x-text=&quot;foo&quot;&gt;&lt;/span&gt;
+&lt;/div&gt;
+```
+
+---
+# Use `Alpine.data()` for component definitions
+- Separation of JS logic and templating
+- Easier to move JS-part to some other part of the page
+- Because of CSP disallowing `unsafe-eval`
+
+---
+# Use `Alpine.data()` for component definitions
+Template: &lt;!-- .element: class=&quot;label&quot; --&gt;
+```html
+&lt;div x-data=&quot;component1&quot;&gt;
+    Foo: &lt;span x-text=&quot;foo&quot;&gt;&lt;/span&gt;
+&lt;/div&gt;
+```
+
+Script: &lt;!-- .element: class=&quot;label&quot; --&gt;
+```js
+document.addEventListener(&#039;alpine:init&#039;, () =&gt; {
+    Alpine.data(&#039;component1&#039;, () =&gt; {
+        return {
+            init() {
+                console.log(&quot;component1 is being initialized&quot;)
+            },
+            foo: &#039;bar&#039;
+        }
+    });
+});
+```
+
+---
+# Naming your component
+- Make sure your component name is unique
+- Do not start with `init`
+- Suggestions:
+    - `camelCase` or `PascalCase`
+    - Include the vendor name
+- With Loki Extensions, block name becomes component name
+
+```xml
+&lt;block name=&quot;loki-checkout.example&quot; /&gt;
+```
+
+```js
+Alpine.data(&#039;LokiCheckoutExample&#039;, () =&gt; ({}));
+```
+
+---
+# Reusing component definitions
+Template: &lt;!-- .element: class=&quot;label&quot; --&gt;
+```html
+&lt;div x-data=&quot;component1&quot;&gt;&lt;/div&gt;
+&lt;div x-data=&quot;component1&quot;&gt;&lt;/div&gt;
+&lt;div x-data=&quot;component1&quot;&gt;&lt;/div&gt;
+```
+
+Script: &lt;!-- .element: class=&quot;label&quot; --&gt;
+```js
+document.addEventListener(&#039;alpine:init&#039;, () =&gt; {
+    Alpine.data(&#039;component1&#039;, () =&gt; ({}));
+});
+```
+
+---
+&lt;!-- .slide: class=&quot;section-slide&quot; --&gt;
+Part 2 &lt;!-- .element: class=&quot;kicker&quot; --&gt;
+
+# Component types &amp; partials
+
+---
+# Component types
+Template: &lt;!-- .element: class=&quot;label&quot; --&gt;
+```html
+&lt;div x-data=&quot;component1&quot;&gt;&lt;/div&gt;
+&lt;div x-data=&quot;component2&quot;&gt;&lt;/div&gt;
+&lt;div x-data=&quot;component3&quot;&gt;&lt;/div&gt;
+```
+
+Script: &lt;!-- .element: class=&quot;label&quot; --&gt;
+```js
+const componentType = {foo: &quot;bar&quot;};
+document.addEventListener(&#039;alpine:init&#039;, () =&gt; {
+    Alpine.data(&#039;component1&#039;, () =&gt; ({name: &quot;component1&quot;, ...componentType}));
+    Alpine.data(&#039;component2&#039;, () =&gt; ({name: &quot;component2&quot;, ...componentType}));
+    Alpine.data(&#039;component3&#039;, () =&gt; ({name: &quot;component3&quot;, ...componentType}));
+});
+```
+
+---
+# Alpine.js terminology
+- Component (instance)
+- Component definition
+- **Component type**
+- **Component partial**
+
+---
+# Component partials (Loki)
+```js
+const LokiComponentType = {
+    ...LokiLoadDataComponentPartial,
+    ...LokiLoadInitMethodsComponentPartial,
+    ...LokiLoadDestroyMethodsComponentPartial,
+    ...LokiLoaderComponentPartial
+};
+
+const LokiFieldComponentType = {
+    ...LokiComponentType
+};
+
+document.addEventListener(&#039;alpine:init&#039;, () =&gt; {
+    Alpine.data(&#039;LokiFieldComponent&#039;, () =&gt; ({
+        ...LokiFieldComponentType
+    }));
+});
+```
+
+---
+&lt;!-- .slide: class=&quot;section-slide&quot; --&gt;
+Part 3 &lt;!-- .element: class=&quot;kicker&quot; --&gt;
+
+# Sharing state with stores
+
+---
+# `Alpine.store()`
+```js
+document.addEventListener(&#039;alpine:init&#039;, () =&gt; {
+    Alpine.store(&#039;foobar&#039;, {});
+});
+```
+
+---
+&lt;!-- .slide: class=&quot;dense&quot; --&gt;
+# Components store
+
+```js
+Alpine.store(&#039;components&#039;, {
+    components: {},
+    componentNames() {
+        return Object.keys(this.components);
+    },
+    add(componentId, component) {
+        this.components[componentId] = component;
+    },
+    get(componentId) {
+        return this.components[componentId];
+    }
+});
+
+Alpine.data(&#039;component1&#039;, () =&gt; {
+    return {
+        init() {
+            Alpine.store(&#039;components&#039;).add(&#039;component1&#039;, this);
+        },
+    }
+});
+```
+
+```js
+Alpine.store(&#039;components&#039;).componentNames();
+```
+
+---
+# Component-store-aware component type
+```js
+const ComponentAwareType = {
+    init() {
+        Alpine.store(&#039;components&#039;).add(this.name, this);
+    }
+};
+
+Alpine.data(&#039;component1&#039;, () =&gt; ({
+    ...ComponentAwareType,
+    name: &#039;component1&#039;,
+}));
+```
+
+&gt; `init()` can only be defined once, but you could create an `init()` that calls upon any other method starting with `init*` (like with Loki Components).
+
+---
+# Referring from one component to another
+```js
+Alpine.data(&#039;component2&#039;, () =&gt; {
+    return {
+        init() {
+            Alpine.store(&#039;components&#039;).add(&#039;component2&#039;, this);
+        },
+        foo() {
+            return Alpine.store(&#039;components&#039;).get(&#039;component1&#039;)?.foo;
+        }
+    }
+});
+```
+
+&gt; Note that `component2:foo` is already reactive. Any change of `component1:foo` leads to a change of `component2:foo` (without `$watch` magic).
+
+---
+# Magento KnockoutJS / UiComponent magic
+- ✅ `import`: done
+- ⏱️ `export`: maybe
+- &lt;span class=&quot;cross&quot;&gt;✗&lt;/span&gt; `link` (combination of `import` and `export`): nah
+
+---
+# Adding a new prop to an existing component 
+```js
+Alpine.data(&#039;component2&#039;, () =&gt; {
+    return {
+        foo() {
+            return Alpine.store(&#039;components&#039;).get(&#039;component1&#039;)?.foo2;
+        }
+    }
+});
+```
+
+And then you need to update the template
+
+---
+# Pushing with `Alpine.$data`
+```js
+Alpine.data(&#039;component2&#039;, () =&gt; {
+    return {
+        init() {
+            setTimeout(() =&gt; {
+                const element = document.querySelector(&#039;[x-data=&quot;component1&quot;]&#039;);
+                const component = Alpine.$data(element);
+                component[&#039;foo&#039;] = &#039;testing&#039;;
+            }, 300);
+        },
+    }
+});
+```
+
+&gt; Note that `Alpine.$data()` requires the given component to be already instantiated.
+
+---
+&lt;!-- .slide: class=&quot;section-slide&quot; --&gt;
+Part 4 &lt;!-- .element: class=&quot;kicker&quot; --&gt;
+
+# Extending components
+
+---
+# Hyvä `initHeader` override
+```html
+&lt;div id=&quot;header&quot; x-data=&quot;initHeader&quot;&gt;&lt;/div&gt;
+```
+
+```js
+function initHeader() { return {}; }
+```
+
+Override the global function: &lt;!-- .element: class=&quot;label&quot; --&gt;
+```js
+window.originalInitHeader = window.initHeader;
+window.initHeader = function() {
+    const originalData = window.originalInitHeader();
+    return {
+        ...originalData,
+        foo: &quot;bar&quot;
+    }
+}
+```
+
+---
+# Hyvä `initHeader` with a `Proxy`
+```js
+window.initHeader = new Proxy(window.initHeader, {
+    apply(target, thisArg, args) {
+        console.log(&#039;Before original&#039;);
+        const result = Reflect.apply(target, thisArg, args);
+        console.log(&#039;After original&#039;);
+        return result;
+    }
+});
+```
+
+---
+# Creating a `Proxy` for `Alpine.data()`
+```js
+Alpine.data = new Proxy(Alpine.data, {
+    apply(target, thisArg, args) {
+        const [name, factory] = args;
+        console.log(&#039;Registering:&#039;, name);
+        return Reflect.apply(target, thisArg, args);
+    }
+});
+```
+
+---
+&lt;!-- .slide: class=&quot;dense&quot; --&gt;
+# Hooking this proxy to `ComponentExtender`
+```js
+Alpine.data = new Proxy(Alpine.data, {
+    apply(target, thisArg, args) {
+        const [name, factory] = args;
+        if (typeof factory !== &#039;function&#039;) {
+            return Reflect.apply(target, thisArg, args);
+        }
+
+        const extendedFactory = new Proxy(factory, {
+            apply(target, thisArg, factoryArgs) {
+                const component = Reflect.apply(
+                    target, thisArg, factoryArgs
+                );
+
+                return ComponentExtender.extend(
+                    name, component, factoryArgs
+                );
+            }
+        });
+
+        return Reflect.apply(target, thisArg, [
+            name,
+            extendedFactory
+        ]);
+    }
+});
+```
+
+---
+# `ComponentExtender` logic
+```js
+const ComponentExtender = {
+    extenders: [],
+    addExtender(extenderName, extenderCallback) {
+        this.extenders.push({
+            name: extenderName,
+            callback: extenderCallback,
+        });
+    },
+    extend(componentName, component, args) {
+        this.extenders.forEach((extender) =&gt; {
+            extender.callback(componentName, component, args);
+        });
+
+        return component;
+    }
+};
+```
+
+---
+# Example extender
+```js
+ComponentExtender.addExtender(
+    &#039;component1Extender&#039;,
+    (componentName, component, args) =&gt; {
+        if (componentName !== &#039;component1&#039;) {
+            return;
+        }
+
+        component.foo = &#039;component1-override&#039;;
+        component.customProperty = &#039;Hello World&#039;;
+    }
+);
+```
+
+---
+# Ideas
+- ✅ Select all with prop X (like invalid field components in Loki Checkout)
+- &lt;span class=&quot;cross&quot;&gt;✗&lt;/span&gt; Automatically add any Alpine.js component to a global store
+- ⏱️ Proxy specific setters to make them more secure
+- ⏱️ Alpine store with services for usage in components (service container)
+
+---
+# Loki Checkout
+- &lt;!-- .element: class=&quot;fragment&quot; data-fragment-index=&quot;1&quot; --&gt; Fastest checkout under Luma, Hyvä and Nebula 
+- &lt;!-- .element: class=&quot;fragment&quot; data-fragment-index=&quot;2&quot; --&gt; 299 modules with all tests in the green
+- &lt;!-- .element: class=&quot;fragment&quot; data-fragment-index=&quot;3&quot; --&gt; Exciting new B2B Loki Extensions for 2027
+- &lt;!-- .element: class=&quot;fragment&quot; data-fragment-index=&quot;4&quot; --&gt; Working towards a free plan (Q1 2027)
+
+---
+&lt;!-- .slide: class=&quot;title-slide&quot; data-state=&quot;title&quot; --&gt;
+# Questions
+
+---
+&lt;!-- .slide: class=&quot;title-slide&quot; data-state=&quot;title&quot; --&gt;
+# Thank you!
+
+**Jisse Reitsma** · Yireo
+            </textarea>
+        </section>
+    </div>
+    <div class="deck-footer">
+        <span class="deck-footer__title">Improving Alpine.js Code With Design Patterns</span>
+        <span class="deck-footer__sep">·</span>
+        <span>Jisse Reitsma</span>
+        <span class="deck-footer__sep">·</span>
+        <span>Meet Magento DE 2026</span>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/reveal.js@5/dist/reveal.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/reveal.js@5/plugin/markdown/markdown.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/reveal.js@5/plugin/highlight/highlight.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/reveal.js@5/plugin/notes/notes.js"></script>
+<script>
+    Reveal.initialize({
+        width: 1280,
+        height: 720,
+        margin: 0.04,
+        center: false,
+        hash: true,
+        slideNumber: 'c/t',
+        transition: 'fade',
+        transitionSpeed: 'fast',
+        backgroundTransition: 'fade',
+        plugins: [RevealMarkdown, RevealHighlight, RevealNotes]
+    });
+</script>
+</body>
+</html>
